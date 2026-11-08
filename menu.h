@@ -7,14 +7,17 @@
 
 void displayMenu();
 
-std::vector<std::string> getIngredients();
+std::string getIngredients();
 
 int getNumberOfResults();
 
 int getSearchMethod();
 
 void displayResults(
-    const std::vector<SearchResult>& results,
+    const std::vector<ScoredRecipe>& results,
+    const std::vector<Recipe>& recipes,
+    const std::vector<int>& queryIngredients,
+    const std::vector<std::string>& vocabulary,
     double queryTime
 );
 
@@ -25,4 +28,3 @@ void displayMissingIngredients(
 );
 
 #endif
-
