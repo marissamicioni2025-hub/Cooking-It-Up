@@ -1,6 +1,5 @@
 #include "menu.h"
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -19,39 +18,13 @@ void displayMenu() {
     cout << "Enter your choice: ";
 }
 
-vector<string> getIngredients() {
-    vector<string> ingredients;
+string getIngredients() {
     string input;
 
     cout << "\nEnter ingredients separated by commas: ";
     getline(cin, input);
 
-    stringstream ss(input);
-    string ingredient;
-
-    while (getline(ss, ingredient, ',')) {
-        size_t start = ingredient.find_first_not_of(" \t");
-
-        if (start == string::npos) {
-            continue;
-        }
-
-        size_t end = ingredient.find_last_not_of(" \t");
-        ingredient = ingredient.substr(start, end - start + 1);
-
-        for (char& c : ingredient) {
-            if (c >= 'A' && c <= 'Z') {
-                c = c - 'A' + 'a';
-            }
-        }
-
-        if (find(ingredients.begin(), ingredients.end(),
-                 ingredient) == ingredients.end()) {
-            ingredients.push_back(ingredient);
-        }
-    }
-
-    return ingredients;
+    return input;
 }
 
 int getNumberOfResults() {
@@ -65,8 +38,11 @@ int getNumberOfResults() {
             return n;
         }
 
-        cout << "Invalid input. Enter a positive number.\n";
+        if (cin.eof()) {
+            return 0;
+        }
 
+        cout << "Invalid input. Enter a positive number.\n";
         cin.clear();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
@@ -87,37 +63,14 @@ int getSearchMethod() {
             return method;
         }
 
-        cout << "Invalid choice. Please enter 1, 2, or 3.\n";
+        if (cin.eof()) {
+            return 0;
+        }
 
+        cout << "Invalid choice. Please enter 1, 2, or 3.\n";
         cin.clear();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
-}
-
-void displayResults(
-    const vector<SearchResult>& results,
-    double queryTime
-) {
-    cout << "\n========== RECIPE RESULTS ==========\n";
-
-    if (results.empty()) {
-        cout << "No matching recipes found.\n";
-    } else {
-        for (size_t i = 0; i < results.size(); i++) {
-            cout << "\n" << i + 1 << ". "
-                 << results[i].recipe.name << "\n";
-
-            cout << "Similarity Score: "
-                 << fixed << setprecision(4)
-                 << results[i].score << "\n";
-        }
-    }
-
-    cout << "\nQuery Time: "
-         << fixed << setprecision(3)
-         << queryTime << " ms\n";
-
-    cout << "====================================\n";
 }
 
 void displayMissingIngredients(
@@ -154,3 +107,47 @@ void displayMissingIngredients(
     cout << "\n";
 }
 
+void displayResults(
+    const vector<ScoredRecipe>& results,
+    const vector<Recipe>& recipes,
+    const vector<int>& queryIngredients,
+    const vector<string>& vocabulary,
+    double queryTime
+) {
+    cout << "\n========== RECIPE RESULTS ==========\n";
+
+    if (results.empty()) {
+        cout << "No matching recipes found.\n";
+    } else {
+        for (size_t i = 0; i < results.size(); i++) {
+            const ScoredRecipe& result = results[i];
+
+            cout << "\n" << i + 1 << ". "
+                 << result.name << "\n";
+
+            cout << "Similarity Score: "
+                 << fixed << setprecision(4)
+                 << result.score << "\n";
+
+            cout << "Matched Ingredients: "
+                 << result.overlapCount << "\n";
+
+            for (const Recipe& recipe : recipes) {
+                if (recipe.id == result.recipeId) {
+                    displayMissingIngredients(
+                        recipe.ingredientIds,
+                        queryIngredients,
+                        vocabulary
+                    );
+                    break;
+                }
+            }
+        }
+    }
+
+    cout << "\nQuery Time: "
+         << fixed << setprecision(3)
+         << queryTime << " ms\n";
+
+    cout << "====================================\n";
+}
