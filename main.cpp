@@ -81,12 +81,13 @@ int main(int argc, char* argv[]) {
         }
 
         if (!query.unknown.empty()) {
-            cout << "\nIngredients not found in dataset: ";
+            cout << "\nIgnoring ingredients not found in dataset: ";
 
             for (size_t i = 0; i < query.unknown.size(); i++) {
                 if (i > 0) {
                     cout << ", ";
                 }
+
                 cout << query.unknown[i];
             }
 
@@ -99,15 +100,18 @@ int main(int argc, char* argv[]) {
         }
 
         int topN = getNumberOfResults();
+
         if (topN == 0) {
             break;
         }
 
         int method = getSearchMethod();
+
         if (method == 0) {
             break;
         }
 
+        // Searches and benchmarks use the same recognized ingredient IDs.
         const vector<Recipe>& recipes = database.recipes();
 
         auto runJaccard = [&]() {
@@ -116,7 +120,10 @@ int main(int argc, char* argv[]) {
             auto start = chrono::steady_clock::now();
 
             vector<ScoredRecipe> scored =
-                Jaccard::scoreAllRecipes(recipes, query);
+                Jaccard::scoreAllRecipes(
+                    recipes,
+                    query.ingredientIds
+                );
 
             vector<ScoredRecipe> topResults =
                 Ranking::getTopNRecipes(scored, topN);
@@ -179,6 +186,7 @@ int main(int argc, char* argv[]) {
         cout << "\nWould you like to run benchmarks? (y/n): ";
 
         char benchmarkChoice;
+
         if (!(cin >> benchmarkChoice)) {
             break;
         }
